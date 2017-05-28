@@ -14,28 +14,27 @@ import (
 )
 
 func main() {
-	// Init termbox
 	err := termbox.Init()
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-	defer termbox.Close()
-	initCli()
+	commands()
 }
 
-func initCli() {
+func commands() {
+	// init cli app
 	app := cli.NewApp()
-	app.Name = "pomodoro-cli"
+	app.Name = "gomato"
 	app.Usage = "pomodoro timer"
 	app.Commands = []cli.Command{
 		{
 			Name:    "timer",
 			Aliases: []string{"t"},
-			Usage:   "progress timer",
+			Usage:   "Start pomodoro timer\n\tYou can set time [task] [short break] [long break]\n\t(default time is 25 5 15)",
 			Action:  timerAction,
 		},
 	}
-
 	app.After = func(c *cli.Context) error {
 		fmt.Println("END")
 		return nil
@@ -57,17 +56,23 @@ func timerAction(c *cli.Context) {
 	x, _ := strconv.Atoi(c0)
 	y, _ := strconv.Atoi(c1)
 	z, _ := strconv.Atoi(c2)
-	for i := 1; i < 5; i++ {
-		str := "[task time] " + c0 + " Second" + ":(" + strconv.Itoa(i) + "/4)"
+	for i := 1; i < 4; i++ {
+		str := "[task time] " + ":(" + strconv.Itoa(i) + "/4)" + c1 + " Second"
 		timer(x, str)
 		cu.MoveUp(1)
 		cu.EraseCurrentLine()
 		checkContinue()
-		str = "[break time] " + c1 + " Second" + ":(" + strconv.Itoa(i) + "/4)"
+		str = "[break time] " + ":(" + strconv.Itoa(i) + "/4)" + c1 + " Second"
 		timer(y, str)
 		cu.MoveUp(1)
 		cu.EraseCurrentLine()
+		checkContinue()
 	}
+	str := "[task time] " + ":(4/4)" + c0 + " Second"
+	timer(x, str)
+	cu.MoveUp(1)
+	cu.EraseCurrentLine()
+	checkContinue()
 	timer(z, "[long break time] "+c2+" Second")
 }
 
