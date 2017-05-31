@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
-	//	"reflect"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -66,24 +65,11 @@ func commands() {
 			Usage:   "Start server to show tasks \nhttp://localhost:3000/",
 			Action:  serverAction,
 		},
-		{
-			Name:    "config",
-			Aliases: []string{"c"},
-			Usage:   "config",
-			Action:  showFiles,
-		},
 	}
 	app.After = func(c *cli.Context) error {
 		return nil
 	}
 	app.Run(os.Args)
-}
-
-func showFiles(c *cli.Context) {
-	json := getJsonFile()
-	fmt.Println(json)
-	tmindex := filepath.Join(getTemplateDir(), "index.tmpl")
-	fmt.Println(tmindex)
 }
 
 func getTemplateDir() string {
