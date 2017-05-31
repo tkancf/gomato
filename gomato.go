@@ -255,7 +255,9 @@ func handleKeyEventNoSave() {
 
 func saveData() Tasks {
 	var s Tasks
-	s = getJson(files.Json)
+	if len(s) == 0 {
+		s = getJson(files.Json)
+	}
 	s = append(s, Task{Name: data.Name, State: data.State, Date: data.Date, Time: data.Time, Elapsed: data.Elapsed})
 	return s
 }
