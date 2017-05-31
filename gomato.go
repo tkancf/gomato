@@ -31,14 +31,15 @@ type Tasks []Task
 var data Task
 
 type File struct {
-	HtmlTemplate string
-	Json         string
+	TemplateDir string
+	Json        string
 }
 
 var files File
 
 func main() {
 	files.Json = getJsonFile()
+	files.TemplateDir = getTemplateDir()
 	err := termbox.Init()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -81,6 +82,14 @@ func commands() {
 func showFiles(c *cli.Context) {
 	json := getJsonFile()
 	fmt.Println(json)
+	tmindex := filepath.Join(getTemplateDir(), "index.tmpl")
+	fmt.Println(tmindex)
+}
+
+func getTemplateDir() string {
+	gopath := os.Getenv("GOPATH")
+	tmp := filepath.Join(gopath, "src", "github.com", "tkancf", "gomato", "templates")
+	return tmp
 }
 
 func getJsonFile() string {
@@ -273,7 +282,7 @@ func serverAction(c *cli.Context) {
 	keys, values := getTaskTimeArray(files.Json)
 	//jsonData := getJson("./data.json")
 	router := gin.Default()
-	router.LoadHTMLGlob("templates/*")
+	router.LoadHTMLGlob(filepath.Join(files.TemplateDir, "*"))
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"keys":   keys,
