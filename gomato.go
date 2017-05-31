@@ -58,7 +58,15 @@ func commands() {
 	// init cli app
 	app := cli.NewApp()
 	app.Name = "gomato"
-	app.Usage = "pomodoro timer"
+	app.Usage = "Pomodoro Timer in Console written in golang."
+	app.Version = "0.1.0"
+	app.Authors = []cli.Author{
+		cli.Author{
+			Name:  "Taikan Yamaguchi",
+			Email: "tkncf789@gmail.com",
+		},
+	}
+
 	app.Commands = []cli.Command{
 		{
 			Name:    "timer",
@@ -149,6 +157,7 @@ func timerAction(c *cli.Context) {
 
 // t = 経過時間, s = 左に表示するステータス
 func timer(t int, s string) {
+	t = t * 60
 	data.Time = getTime()
 	data.Date = getDate()
 	progressBars, _ := multibar.New()
@@ -196,13 +205,13 @@ func getTaskString(s string, t int, i int) string {
 	str := ""
 	if s == "task" {
 		data.State = s
-		str = data.Name + "[task time]" + "(" + is + "/4)<" + ts + ">"
+		str = data.Name + "[task time]" + "(" + is + "/4)<" + ts + "Minutes>"
 	} else if s == "break" {
 		data.State = s
-		str = "[break time]" + "(" + is + "/4)<" + ts + ">"
+		str = "[break time]" + "(" + is + "/4)<" + ts + "Minutes>"
 	} else if s == "lbreak" {
 		data.State = s
-		str = "[long break time]<" + ts + ">"
+		str = "[long break time]<" + ts + "Minutes>"
 	} else {
 		return str
 	}
