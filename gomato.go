@@ -14,8 +14,8 @@ import (
 	"github.com/0xAX/notificator"
 	"github.com/gin-gonic/gin"
 	"github.com/nsf/termbox-go"
-	"github.com/sethgrid/curse"
 	"github.com/sethgrid/multibar"
+	"github.com/tkancf/curse"
 	"github.com/urfave/cli"
 )
 
@@ -69,7 +69,7 @@ func commands() {
 		{
 			Name:    "server",
 			Aliases: []string{"s"},
-			Usage:   "Start server to show tasks \nhttp://localhost:3000/",
+			Usage:   "Start server to show tasks \n\thttp://localhost:3000/",
 			Action:  serverAction,
 		},
 	}
