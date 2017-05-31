@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0xAX/notificator"
 	"github.com/gin-gonic/gin"
 	"github.com/nsf/termbox-go"
 	"github.com/sethgrid/curse"
@@ -36,9 +37,15 @@ type File struct {
 
 var files File
 
+var notify *notificator.Notificator
+
 func main() {
 	files.Json = getJsonFile()
 	files.TemplateDir = getTemplateDir()
+	notify = notificator.New(notificator.Options{
+		DefaultIcon: "icon/default.png",
+		AppName:     "gomato",
+	})
 	err := termbox.Init()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -88,7 +95,7 @@ func timerAction(c *cli.Context) {
 	if !fileExists(files.Json) {
 		ioutil.WriteFile(files.Json, []byte(""), os.ModePerm)
 	}
-	fmt.Println("'ESC' Key to Quit")
+	fmt.Println("'q' Key to Quit")
 	cu, _ := curse.New()
 	c0 := "25"
 	c1 := "5"
@@ -113,6 +120,7 @@ func timerAction(c *cli.Context) {
 			cu.MoveUp(1)
 			cu.EraseCurrentLine()
 			data.Elapsed = t0
+			notify.Push("gomato", data.Name+" task is finished!", "/home/user/icon.png", notificator.UR_CRITICAL)
 			checkContinue()
 
 			data.State = "break"
@@ -120,6 +128,7 @@ func timerAction(c *cli.Context) {
 			cu.MoveUp(1)
 			cu.EraseCurrentLine()
 			data.Elapsed = t1
+			notify.Push("gomato", "break time is finished", "/home/user/icon.png", notificator.UR_CRITICAL)
 			checkContinue()
 		}
 		data.State = "task"
@@ -127,11 +136,13 @@ func timerAction(c *cli.Context) {
 		cu.MoveUp(1)
 		cu.EraseCurrentLine()
 		data.Elapsed = t0
+		notify.Push("gomato", data.Name+" task is finished!", "/home/user/icon.png", notificator.UR_CRITICAL)
 		checkContinue()
 
 		data.State = "lbreak"
 		timer(t2, getTaskString(data.State, t2, 0))
 		data.Elapsed = t2
+		notify.Push("gomato", "long break time is finished", "/home/user/icon.png", notificator.UR_CRITICAL)
 		checkContinue()
 	}
 }
@@ -266,8 +277,9 @@ func writeJson(p string, t *Tasks) {
 func serverAction(c *cli.Context) {
 	go handleKeyEventNoSave()
 	keys, values := getTaskTimeArray(files.Json)
-	//jsonData := getJson("./data.json")
+	fmt.Println("Server start\nAccess to http://localhost:3000/\n'q' Key to Quit")
 	router := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
 	router.LoadHTMLGlob(filepath.Join(files.TemplateDir, "*"))
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
