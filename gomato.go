@@ -80,6 +80,12 @@ func commands() {
 			Usage:   "Start server to show tasks \n\thttp://localhost:3000/",
 			Action:  serverAction,
 		},
+		{
+			Name:    "list",
+			Aliases: []string{"l"},
+			Usage:   "List tasks",
+			Action:  listAction,
+		},
 	}
 	app.After = func(c *cli.Context) error {
 		return nil
@@ -317,4 +323,25 @@ func getTaskTimeArray(path string) ([]string, []int) {
 		values = append(values, v)
 	}
 	return keys, values
+}
+
+func listAction(c *cli.Context) {
+	jsonData := getJson(files.Json)
+	s := []string{}
+	for i := 0; i < len(jsonData); i++ {
+		if !contains(s, jsonData[i].Name) {
+			s = append(s, jsonData[i].Name)
+		}
+	}
+	for i := 0; i < len(s); i++ {
+		fmt.Println(s[i])
+	}
+}
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
