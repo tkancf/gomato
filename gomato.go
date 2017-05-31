@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	//	"reflect"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nsf/termbox-go"
 	"github.com/sethgrid/curse"
 	"github.com/sethgrid/multibar"
@@ -50,9 +52,10 @@ func commands() {
 			Action:  timerAction,
 		},
 		{
-			Name:   "test",
-			Usage:  "test command",
-			Action: saveData,
+			Name:    "server",
+			Aliases: []string{"s"},
+			Usage:   "Start server to show tasks \nhttp://localhost:3000/",
+			Action:  serverAction,
 		},
 	}
 	app.After = func(c *cli.Context) error {
@@ -84,32 +87,34 @@ func timerAction(c *cli.Context) {
 	t0, _ := strconv.Atoi(c0)
 	t1, _ := strconv.Atoi(c1)
 	t2, _ := strconv.Atoi(c2)
-	for i := 1; i < 4; i++ {
+	for {
+		for i := 1; i < 4; i++ {
+			data.State = "task"
+			timer(t0, getTaskString(data.State, t0, i))
+			cu.MoveUp(1)
+			cu.EraseCurrentLine()
+			data.Elapsed = t0
+			checkContinue()
+
+			data.State = "break"
+			timer(t1, getTaskString(data.State, t1, i))
+			cu.MoveUp(1)
+			cu.EraseCurrentLine()
+			data.Elapsed = t1
+			checkContinue()
+		}
 		data.State = "task"
-		timer(t0, getTaskString(data.State, t0, i))
+		timer(t0, getTaskString(data.State, t0, 4))
 		cu.MoveUp(1)
 		cu.EraseCurrentLine()
 		data.Elapsed = t0
 		checkContinue()
 
-		data.State = "break"
-		timer(t1, getTaskString(data.State, t1, i))
-		cu.MoveUp(1)
-		cu.EraseCurrentLine()
-		data.Elapsed = t1
+		data.State = "lbreak"
+		timer(t2, getTaskString(data.State, t2, 0))
+		data.Elapsed = t2
 		checkContinue()
 	}
-	data.State = "task"
-	timer(t0, getTaskString(data.State, t0, 4))
-	cu.MoveUp(1)
-	cu.EraseCurrentLine()
-	data.Elapsed = t0
-	checkContinue()
-
-	data.State = "lbreak"
-	timer(t2, getTaskString(data.State, t2, 0))
-	data.Elapsed = t2
-	saveFile(saveData())
 }
 
 // t = 経過時間, s = 左に表示するステータス
@@ -152,12 +157,6 @@ func checkContinue() {
 	fmt.Printf("'ENTER' to Continue")
 	saveData()
 	switch ev := termbox.PollEvent(); ev.Type {
-	//case termbox.EventKey:
-	//	if ev.Ch == 'q' {
-	//		saveFile(saveData())
-	//		os.Exit(1)
-	//	} else if ev.Key == termbox.KeyEnter {
-	//	}
 	}
 }
 
@@ -181,6 +180,7 @@ func getTaskString(s string, t int, i int) string {
 }
 
 func handleKeyEvent() {
+loop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
@@ -188,13 +188,26 @@ func handleKeyEvent() {
 				os.Exit(1)
 			} else if ev.Ch == 'q' {
 				saveFile(saveData())
+				break loop
+			}
+		}
+	}
+	os.Exit(1)
+}
+
+func handleKeyEventNoSave() {
+	for {
+		switch ev := termbox.PollEvent(); ev.Type {
+		case termbox.EventKey:
+			if ev.Key == termbox.KeyEsc {
+				os.Exit(1)
+			} else if ev.Ch == 'q' {
 				os.Exit(1)
 			}
 		}
 	}
 }
 
-//大体出来てるあとステータスを手に入れてワタしたげるだけ
 func saveData() Tasks {
 	var s Tasks
 	s = getJson("./data.json")
@@ -231,5 +244,37 @@ func writeJson(p string, t *Tasks) {
 	ioutil.WriteFile(p, json, os.ModePerm)
 }
 
-//func getStatus() string, string, string, string{
-//}
+func serverAction(c *cli.Context) {
+	go handleKeyEventNoSave()
+	keys, values := getTaskTimeArray("./data.json")
+	//jsonData := getJson("./data.json")
+	router := gin.Default()
+	router.LoadHTMLGlob("templates/*")
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{
+			"keys":   keys,
+			"values": values,
+		})
+	})
+	router.Run(":3000")
+}
+
+func getTaskTimeArray(path string) ([]string, []int) {
+	jsonData := getJson(path)
+	m := map[string]int{}
+	keys := []string{}
+	values := []int{}
+	for i := 0; i < len(jsonData); i++ {
+		_, ok := m[jsonData[i].Name]
+		if ok == false {
+			m[jsonData[i].Name] = jsonData[i].Elapsed
+		} else {
+			m[jsonData[i].Name] = m[jsonData[i].Name] + jsonData[i].Elapsed
+		}
+	}
+	for k, v := range m {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+	return keys, values
+}
