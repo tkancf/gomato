@@ -7,6 +7,7 @@ import (
 	"os"
 	//	"reflect"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -25,12 +26,19 @@ type Task struct {
 	Time    string `json:"time"`
 	Elapsed int    `json:"Elapsed"`
 }
-
 type Tasks []Task
 
 var data Task
 
+type File struct {
+	HtmlTemplate string
+	Json         string
+}
+
+var files File
+
 func main() {
+	files.Json = getJsonFile()
 	err := termbox.Init()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -57,17 +65,33 @@ func commands() {
 			Usage:   "Start server to show tasks \nhttp://localhost:3000/",
 			Action:  serverAction,
 		},
+		{
+			Name:    "config",
+			Aliases: []string{"c"},
+			Usage:   "config",
+			Action:  showFiles,
+		},
 	}
 	app.After = func(c *cli.Context) error {
-		fmt.Println("END")
 		return nil
 	}
 	app.Run(os.Args)
 }
 
+func showFiles(c *cli.Context) {
+	json := getJsonFile()
+	fmt.Println(json)
+}
+
+func getJsonFile() string {
+	gopath := os.Getenv("GOPATH")
+	json := filepath.Join(gopath, "src", "github.com", "tkancf", "gomato", "data", "data.json")
+	return json
+}
+
 func timerAction(c *cli.Context) {
-	if !fileExists("./data.json") {
-		ioutil.WriteFile("./data.json", []byte(""), os.ModePerm)
+	if !fileExists(files.Json) {
+		ioutil.WriteFile(files.Json, []byte(""), os.ModePerm)
 	}
 	fmt.Println("'ESC' Key to Quit")
 	cu, _ := curse.New()
@@ -210,13 +234,13 @@ func handleKeyEventNoSave() {
 
 func saveData() Tasks {
 	var s Tasks
-	s = getJson("./data.json")
+	s = getJson(files.Json)
 	s = append(s, Task{Name: data.Name, State: data.State, Date: data.Date, Time: data.Time, Elapsed: data.Elapsed})
 	return s
 }
 
 func saveFile(s Tasks) {
-	writeJson("./data.json", &s)
+	writeJson(files.Json, &s)
 }
 
 func fileExists(filename string) bool {
@@ -246,7 +270,7 @@ func writeJson(p string, t *Tasks) {
 
 func serverAction(c *cli.Context) {
 	go handleKeyEventNoSave()
-	keys, values := getTaskTimeArray("./data.json")
+	keys, values := getTaskTimeArray(files.Json)
 	//jsonData := getJson("./data.json")
 	router := gin.Default()
 	router.LoadHTMLGlob("templates/*")
