@@ -62,8 +62,8 @@ func commands() {
 	app.Version = "0.1.0"
 	app.Authors = []cli.Author{
 		cli.Author{
-			Name:  "Taikan Yamaguchi",
-			Email: "tkncf789@gmail.com",
+			Name:  "tkan",
+			Email: "18424095+tkancf@users.noreply.github.com",
 		},
 	}
 
